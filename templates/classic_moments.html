@@ -1,0 +1,85 @@
+index.html{% extends "base.html" %}
+
+{% block main %}
+
+{% include "navbar.html" %}
+
+<div style="margin: auto; padding: 80px 20px 0 20px; width: 360px;">
+  <form  class="form-inline"  id="KeywordForm" method="post" action="">
+    {% module xsrf_form_html() %} 
+	<label for="keyvalue">检索词：</label>	
+	<input  type="text" name="keyword" placeholder="用于过滤新闻的关键词"/>
+	<button id="search">搜索</button>
+  </form>
+</div> 
+
+<div class="img list">
+	<ul typle="overflow：hidden;margin:0 auto;width:100%">
+		{% for index in range(0,len(imgurls),4) %}
+			<li style="float:left;list-style:none;width:25%">
+			 <div class="img152 float-left margin-right">
+			 	<a href="{{imgurls[index].url}}" target="_blank">
+			 		<img  src="{{imgurls[index].imgUrl}}" data-original="{{imgurls[index].imgUrl}}" style="display: block;height: 250px; width: 300px;">
+			 	</a>
+			 	<span style="color:red ; font-size:15px">{{imgurls[index].title}}</span>
+			 </div>
+		 </li>
+		 
+		 {% if ((index+1)<len(imgurls)) %}
+		 	<li style="float:left;list-style:none;width:25%">
+			 <div class="img152 float-left margin-right">
+			 	<a href="{{imgurls[index+1].url}}" target="_blank">
+			 		<img  src="{{imgurls[index+1].imgUrl}}" data-original="{{imgurls[index+1].imgUrl}}" style="display: block;height: 250px; width: 300px;">
+			 	</a>
+			 	<span style="color:red ; font-size:15px">{{imgurls[index+1].title}}</span>
+			 </div>
+		 </li>
+		 {% end %}
+		 
+		 	{% if ((index+2)<len(imgurls)) %}
+		 	<li style="float:left;list-style:none;width:25%">
+			 <div class="img152 float-left margin-right">
+			 	<a href="{{imgurls[index+2].url}}" target="_blank">
+			 		<img  src="{{imgurls[index+2].imgUrl}}" data-original="{{imgurls[index+2].imgUrl}}" style="display: block;height: 250px; width: 300px;">
+			 	</a>
+			 	<span style="color:red ; font-size:15px">{{imgurls[index+2].title}}</span>
+			 </div>
+		 </li>
+		 {% end %}
+		 
+		 {% if ((index+3)<len(imgurls)) %}
+		 <li style="float:left;list-style:none;width:25%; clear:both">
+			 <div class="img152 float-left margin-right">
+			 	<a href="{{imgurls[index+3].url}}" target="_blank">
+			 		<img  src="{{imgurls[index+3].imgUrl}}" data-original="{{imgurls[index+3].imgUrl}}" style="display: block;height: 250px; width: 300px;">
+			 	</a>
+			 	<span style="color:red ; font-size:15px">{{imgurls[index+3].title}}</span>
+			 </div>
+		 </li>
+		 {% end %}
+		 {% end %}
+	</ul>
+</div>    
+ 
+<script>
+    var $$ = mdui.JQ;
+    $$("#search").on('click', function () {
+		var uploadFormData = $$('#KeywordForm').serialize();
+        $$.ajax({
+            method: 'POST',
+            url: '/classicMoment',
+            data: uploadFormData,
+            success: function (data) {
+                var res = JSON.parse(data);
+                if(res["success"] == true){
+                    window.location.reload();
+                } else {
+                    alert(res["msg"]);
+                }
+            }
+        });
+    });
+</script> 
+     
+
+{% end %}
