@@ -44,6 +44,7 @@ class ClassicPipeline(object):
 
 class ClassicMysqlPipeline(object):
     def process_item(self, item, spider):
+        print(item['image_url'])
         info = {
             "title": item['title'],
             "url": item['url'],

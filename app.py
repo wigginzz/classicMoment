@@ -5,6 +5,16 @@ import tornado.web
 import tornado.locale
 import tornado.escape
 from tornado.options import define, options
+from tornado.concurrent import run_on_executor
+from concurrent.futures import ThreadPoolExecutor
+from scrapy.crawler import CrawlerRunner  
+from scrapy.settings import Settings
+from classicMonments.spider.spiders.ClassicSpider import ClassicSpider
+from twisted.internet import reactor,task
+from tornado import gen
+
+
+
 
 import uimodules
 from config import ITEMS_NUM_PERPAGE, TIME_LIMIT
@@ -649,16 +659,23 @@ class UserDeleteHandler(BaseHandler):
             self.write(res)
 
 class ClassicMoments(BaseHandler):
+    executor = ThreadPoolExecutor(10)
+
     def get(self):
         imgurls = get_imagUrls()
         #for i in range(0,len(imgurls),4):
         #    print(imgurls[i].title)
         self.render("classic_moments.html",imgurls=imgurls)
+        
+    @run_on_executor        
     def post(self):
         res = {"success": False, "msg": ""}
+        delete_imagUrls()
         keywords = self.get_argument("keyword").split()
-        imgurls = get_imagUrls()
-        print("total=%d" %len(imgurls))
+        #tornado.ioloop.PeriodicCallback(self.__showScrapyResult, 100).start()
+
+        self.__runSpider(keywords)
+        """imgurls = get_imagUrls()
         if len(keywords):
             pattern = keywords[0]
             for key in range(1,len(keywords),1):
@@ -672,13 +689,39 @@ class ClassicMoments(BaseHandler):
         self.render("classic_moments.html",imgurls=imgurls)
                 
         #result = run(text)
-        """if not result["success"]:
+        if not result["success"]:
             res["msg"] = result["msg"]
             self.finish(res)
         else:
             res["success"] = True
             res["msg"] = "创建成功"
             self.write(res)"""
+    def __runSpider(self,keyword):        
+        settings = Settings({
+        #Spiders can still be referenced by their name if SPIDER_MODULES is set with the modules where Scrapy should look for spiders.  
+        #Otherwise, passing the spider class as first argument in the CrawlerRunner.  
+        'SPIDER_MODULES':['classicMonments.spider.spiders.ClassicSpider'],    
+        'ROBOTSTXT_OBEY':False,
+        #设置包头  
+        'DEFAULT_REQUEST_HEADERS':{    
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'},  
+        #启用pipelines组件  
+        'ITEM_PIPELINES':{  
+        'classicMonments.spider.pipelines.ClassicPipeline': 300,
+        'classicMonments.spider.pipelines.ClassicMysqlPipeline': 302,},      
+        })
+        runner=CrawlerRunner(settings)  
+        d=runner.crawl(ClassicSpider,keywords=keyword)  
+        d.addBoth(lambda _: reactor.stop())
+        reactor.run()
+        
+         
+        
+    def __showScrapyResult(self):
+        imgurls = get_imagUrls()
+        #for i in range(0,len(imgurls),4):
+        #    print(imgurls[i].title)
+        self.render("classic_moments.html",imgurls=imgurls)
 
 
 

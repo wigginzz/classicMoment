@@ -5,6 +5,8 @@ from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import CrawlSpider, Rule
 from classicMonments.spider.items import ClassicItem
 
+
+
 class ClassicSpider(CrawlSpider):
     name = 'ClassicSpider'
     allowed_domains = ['www.gov.cn','sousuo.gov.cn']
@@ -20,27 +22,29 @@ class ClassicSpider(CrawlSpider):
         Rule(LinkExtractor(allow='http://sousuo.gov.cn/column/.*'), follow=True),
     )
 
+    def __init__(self, keywords=None,*a, **kw):
+        super(ClassicSpider, self).__init__(*a, **kw)
+        self.__keywords = keywords
+
     def parse_item(self, response):
         content = response.xpath('//div[@class="article oneColumn pub_border"]')
         item = ClassicItem()
-        item['url'] = response.url
-        item['title'] = content.xpath('h1/text()').extract_first()
-        item['image_url'] = content.xpath('div[@class="pages_content"]/p/img/@src').extract_first()
-        if item['image_url']:        
-            item['image_url'] = re.sub(r'[^\/]+$','',response.url) + item['image_url']
-            return item;
-        else:
-            return
+                
+        keywords = self.__keywords;
+        pattern =  keywords[0]
+        for key in range(1,len(keywords),1):
+            pattern = pattern + '|' + keywords[key]
+    
+        news_conntent = content.xpath('div[@class="pages_content"]/p/text()').extract()
+        match = re.findall(pattern,''.join(news_conntent))            
+        if len(match):
+            imgUrls = content.xpath('div[@class="pages_content"]/p/img/@src').extract()
+            for imgurl in imgUrls:
+                item['url'] = response.url
+                item['title'] = content.xpath('h1/text()').extract_first()
+                
+                item['image_url'] = re.sub(r'[^\/]+$','',response.url) + imgurl
+                yield item;
         
-
-
-    def parse_info(self,response):
-        item = response.meta['item']
-        #获取其他信息
-        item['book_price'] = response.xpath('//div[@class="book-details"]//span/text()').extract_first()
-        #简介
-        item['book_info'] = response.xpath('//div[@class="book-summary"]/div/div/text()').extract_first()
-        item['book_publish'] = response.xpath('//div[@class="book-details"]//table//tr[2]/td[2]/a/text()').extract_first()
-        yield item
 
 

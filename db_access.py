@@ -507,7 +507,7 @@ def delete_contact(contact_id):
 def create_imagUrl(**kwargs):
     try:
         res = {"success": False, "msg": ""}
-        website = session.query(imageUrl).filter_by(url=kwargs["url"]).first()
+        website = session.query(imageUrl).filter_by(imgUrl=kwargs["img_url"]).first()
         if website:
             res["msg"] = "站点已存在"
             return res
@@ -527,6 +527,18 @@ def get_imagUrls():
     # companies = session.query(Company).order_by(desc(Company.create_at)).all()
     return imgurls
 
+def delete_imagUrls():
+    try:
+        old_info_feed = session.query(imageUrl).all()
+        for f in old_info_feed:
+            session.delete(f)
+            # session.commit()
+        session.flush()
+        return True
+    except Exception as e:
+        # print(str(e))
+        # session.rollback()
+        return False
 
 def get_reports():
     reports = session.query(Report).order_by(desc(Report.create_at)).all()
